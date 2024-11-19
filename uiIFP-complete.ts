@@ -3,10 +3,9 @@ import ReactDOM from "react-dom/client";
 import "./style.css";
 import Home from "./pages/home";
 import PageContext, { PAGES } from "./context/page-context";
-// ... other imports
+import { CssFramework, UiFramework } from "./constants";  // Added framework imports
 
 const UI = () => {
-    // 1. Fix: Add missing PAGES import and definition
     const [currentPage, setCurrentPage] = useState(PAGES.HOME);
     const [previousPage, setPreviousPage] = useState(PAGES.HOME);
     const [isComponentSelected, setIsComponentSelected] = useState(false);
@@ -14,21 +13,19 @@ const UI = () => {
     const [isGeneratingCode, setIsGeneratingCode] = useState(false);
     const [nodesMetadata, setNodesMetadata] = useState<string | null>(null);
 
-    // 2. Fix: Add state for UI framework and CSS framework
-    const [selectedUiFramework, setSelectedUiFramework] = useState(
+    // Updated framework states with proper typing
+    const [selectedUiFramework, setSelectedUiFramework] = useState<UiFramework>(
         UiFramework.react
     );
-    const [selectedCssFramework, setSelectedCssFramework] = useState(
+    const [selectedCssFramework, setSelectedCssFramework] = useState<CssFramework>(
         CssFramework.tailwindcss
     );
 
-    // 3. Fix: Add export states
     const [isExporting, setIsExporting] = useState(false);
     const [exportProgress, setExportProgress] = useState(0);
     const [totalFrames, setTotalFrames] = useState(0);
     const [exportedFrames, setExportedFrames] = useState(0);
 
-    // 4. Fix: Correct message handler typing
     onmessage = async (event: MessageEvent) => {
         const pluginMessage = event.data.pluginMessage;
 
@@ -70,14 +67,12 @@ const UI = () => {
         }
     };
 
-    // 5. Fix: Add error handler
     const handleExportError = (msg: any) => {
         setIsExporting(false);
         setExportProgress(0);
         console.error('Export error:', msg.message);
     };
 
-    // 6. Fix: Correct frame export handler
     const handleFrameExported = async (msg: any) => {
         try {
             const { data, fileName } = msg;
@@ -118,7 +113,6 @@ const UI = () => {
             }
         }}>
             <div className="h-full">
-                {/* 7. Fix: Add proper condition for Home component */}
                 {currentPage === PAGES.HOME && (
                     <Home
                         connectedToVSCode={connectedToVSCode}
@@ -131,7 +125,6 @@ const UI = () => {
                     />
                 )}
 
-                {/* 8. Fix: Add export progress indicator */}
                 {isExporting && (
                     <div className="fixed bottom-0 left-0 right-0 p-4 bg-white shadow-lg">
                         <div className="w-full bg-gray-200 rounded-full h-2.5">
@@ -146,13 +139,11 @@ const UI = () => {
                     </div>
                 )}
 
-                {/* 9. Fix: Keep existing components */}
                 {/* ... other components ... */}
             </div>
         </PageContext.Provider>
     );
 };
 
-// Fix: Correct root creation and render
 const root = ReactDOM.createRoot(document.getElementById("react-page")!);
 root.render(<UI />);
