@@ -16,17 +16,48 @@ figma.ui.onmessage = async (msg) => {
 
     // New JPEG export handler
     if (msg.type === "export-frames-to-jpeg") {
-        try {
-            await exportFramesToJpeg(msg.options?.scale || 2);
-        } catch (error) {
-            figma.ui.postMessage({
-                type: "export-error",
-                message: error.message
-            });
-        }
+        const exportPromise = new Promise(async (resolve, reject) => {
+            try {
+                await exportFramesToJpeg(msg.options?.scale || 2);
+                resolve({ success: true });
+            } catch (error) {
+                reject(error);
+            }
+        });
+
+        await handleConversionPromise(exportPromise, 'JPEG Export');
     }
 
     // ... [Keep other existing handlers] ...
+};
+
+// Helper function to handle conversion promise and send messages to UI
+const handleConversionPromise = async (promise: Promise<any>, operationType: string = 'Conversion') => {
+    try {
+        const result = await promise;
+        figma.ui.postMessage({
+            type: "generated-files",
+            files: result,
+            operationType: operationType,
+        });
+    } catch (e) {
+        const errorDetails = {
+            error: e.name,
+            message: e.message,
+            stack: e.stack,
+        };
+        console.error(`Error from ${operationType} on current page:`, errorDetails);
+        
+        figma.ui.postMessage({
+            type: "generated-files",
+            files: [],
+            error: true,
+            operationType: operationType,
+            message: `Error on ${operationType}: ${e.message}`
+        });
+        
+        throw e;
+    }
 };
 
 async function exportFramesToJpeg(scale: number = 2) {
@@ -42,6 +73,8 @@ async function exportFramesToJpeg(scale: number = 2) {
         type: "export-start",
         frameCount: frames.length
     });
+
+    const exportedFrames = [];
 
     for (const frame of frames) {
         try {
@@ -61,11 +94,17 @@ async function exportFramesToJpeg(scale: number = 2) {
             }
             const base64Data = btoa(binary);
 
-            figma.ui.postMessage({
-                type: "frame-exported",
+            const exportedFrame = {
                 fileName: `${frame.name}.jpg`,
                 data: base64Data,
                 frameId: frame.id
+            };
+
+            exportedFrames.push(exportedFrame);
+
+            figma.ui.postMessage({
+                type: "frame-exported",
+                ...exportedFrame
             });
 
         } catch (error) {
@@ -77,6 +116,8 @@ async function exportFramesToJpeg(scale: number = 2) {
         type: "export-complete",
         message: "All frames exported successfully"
     });
+
+    return exportedFrames; // Return the exported frames for handleConversionPromise
 }
 
-// ... [Keep existing helper functions] ...
+// ... [Keep other existing helper functions] ...
